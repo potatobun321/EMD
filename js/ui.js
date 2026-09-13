@@ -691,10 +691,28 @@ const UI = (() => {
           icon: "!",
           title: "Already Scanned",
           name: p.name || payload.participantId,
-          id: payload.participantId,
+          id: p.track ? `${payload.participantId} · ${p.track}` : payload.participantId,
           checkpoint: checkpointName,
           timeLabel: prev.timestamp ? "Previous scan" : "Status",
           time: prev.timestamp ? formatTime(new Date(prev.timestamp)) : "Duplicate Entry",
+          type: p.type || "",
+          acc: p.acc || ""
+        });
+        break;
+      }
+      case "ENTITLEMENT_DENIED": {
+        SoundFX.playError();
+        Haptics.error();
+        const p = res.participant || {};
+        showResult({
+          overlayClass: "error",
+          icon: "⛔",
+          title: "Access Denied",
+          name: p.name || payload.participantId,
+          id: p.track ? `${payload.participantId} · ${p.track}` : payload.participantId,
+          checkpoint: checkpointName,
+          timeLabel: "Reason",
+          time: (res && res.message) || "Entitlement Denied",
           type: p.type || "",
           acc: p.acc || ""
         });
@@ -741,7 +759,7 @@ const UI = (() => {
           timeLabel: "Time",
           time: nowLabel,
         });
-        setTimeout(() => forceLogout(), Config.RESULT_AUTO_DISMISS_MS + 400);
+        setTimeout(() => forceLogout(), 1200);
         break;
       case "TIMEOUT":
         SoundFX.playPending();
@@ -750,12 +768,12 @@ const UI = (() => {
         showResult({
           overlayClass: "pending",
           icon: "⏳",
-          title: "Server Busy",
-          name: "Will retry automatically",
+          title: "Saved Locally ✓",
+          name: "Server busy — will sync in background",
           id: payload.participantId,
           checkpoint: checkpointName,
-          timeLabel: "Time",
-          time: nowLabel,
+          timeLabel: "Status",
+          time: "Queued (Line Can Proceed)",
         });
         break;
       default:
@@ -810,8 +828,21 @@ const UI = (() => {
     els.resultOverlay.classList.remove("hidden");
 
     clearTimeout(dismissTimer);
-    if (Config.RESULT_AUTO_DISMISS_MS > 0) {
-      dismissTimer = setTimeout(dismissResult, Config.RESULT_AUTO_DISMISS_MS);
+    let autoDismissMs = 0;
+    if (overlayClass === "success") {
+      autoDismissMs = typeof Config.RESULT_SUCCESS_DISMISS_MS !== "undefined" ? Config.RESULT_SUCCESS_DISMISS_MS : 800;
+      if (els.scanNextBtn) els.scanNextBtn.textContent = "Ready for Next Scan";
+    } else if (overlayClass === "pending") {
+      autoDismissMs = typeof Config.RESULT_PENDING_DISMISS_MS !== "undefined" ? Config.RESULT_PENDING_DISMISS_MS : 1200;
+      if (els.scanNextBtn) els.scanNextBtn.textContent = "Continue Scanning";
+    } else {
+      // Errors, duplicates, entitlement denials: require deliberate volunteer acknowledgment
+      autoDismissMs = typeof Config.RESULT_ERROR_DISMISS_MS !== "undefined" ? Config.RESULT_ERROR_DISMISS_MS : 0;
+      if (els.scanNextBtn) els.scanNextBtn.textContent = "⚠️ Acknowledge & Continue";
+    }
+
+    if (autoDismissMs > 0) {
+      dismissTimer = setTimeout(dismissResult, autoDismissMs);
     }
   }
 
@@ -822,8 +853,13 @@ const UI = (() => {
   }
 
   function wireResultDismiss() {
-    els.scanNextBtn.addEventListener("click", dismissResult);
-    els.resultOverlay.addEventListener("click", dismissResult);
+    if (els.scanNextBtn) els.scanNextBtn.addEventListener("click", dismissResult);
+    if (els.resultOverlay) {
+      els.resultOverlay.addEventListener("click", (e) => {
+        // Tap anywhere on overlay to dismiss immediately
+        dismissResult();
+      });
+    }
   }
 
   /* ---------------- Status Bar & Logout ---------------- */

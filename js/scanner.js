@@ -158,6 +158,18 @@ const Scanner = (() => {
     html5QrCode = null;
   }
 
+  // Battery & thermal optimizer: sleep camera sensor when app is minimized or phone locked
+  document.addEventListener("visibilitychange", () => {
+    if (!isRunning) return;
+    const track = getVideoTrack();
+    if (!track) return;
+    if (document.visibilityState === "hidden") {
+      track.enabled = false;
+    } else if (document.visibilityState === "visible") {
+      track.enabled = true;
+    }
+  });
+
   return {
     start,
     stop,

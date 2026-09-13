@@ -26,9 +26,9 @@ const APP_SHELL = [
   "./js/auth.js",
   "./js/scanner.js",
   "./js/ui.js",
+  "./js/vendor/html5-qrcode.min.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
-  "https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js",
 ];
 
 self.addEventListener("install", (event) => {

@@ -13,11 +13,17 @@ const Config = {
 
   // Bump this string on every deploy that changes cached files.
   // The service worker uses it to know when to refresh its cache.
-  APP_VERSION: "v1.5.1",
+  APP_VERSION: "v1.7.0",
 
-  // Ultra-fast auto-dismiss (0.8s) for high-throughput scanning queues.
-  // Volunteers can also tap anywhere on the overlay to scan instantly.
-  RESULT_AUTO_DISMISS_MS: 800,
+  // Ultra-fast auto-dismiss (0.8s) for valid, high-throughput scanning queues.
+  RESULT_SUCCESS_DISMISS_MS: 800,
+
+  // Error, duplicate, and entitlement rejection dismiss time (ms).
+  // 0 = Manual tap-to-dismiss required so volunteers cannot miss denied entries.
+  RESULT_ERROR_DISMISS_MS: 0,
+
+  // Auto-dismiss for offline / queued scans (ms).
+  RESULT_PENDING_DISMISS_MS: 1200,
 
   // How many queued offline scans to send per bulkSync request.
   SYNC_BATCH_SIZE: 20,
