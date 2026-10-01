@@ -17,11 +17,11 @@ alwaysApply: true
      2. **About** (`about.html`)
      3. **Events** (`journey.html`)
      4. **Forums** (`forums.html`)
-     5. **E-Magazine** (`magazine.html`)
-     6. **Gallery** (`gallery.html`)
-     7. **Write for Us** (`write-for-us.html`)
-     8. **Join Us** (`join.html`)
-     9. **Contact** (`contact.html`)
+     5. **Gallery** (`gallery.html`)
+     6. **Write for Us** (`write-for-us.html`)
+     7. **Join Us** (`join.html`)
+     8. **Contact** (`contact.html`)
+   - `magazine.html` remains directly accessible via URL but is hidden from the top navigation bar.
    - Do NOT add `councils.html` to `#nav-links` or `.footer-links` until explicitly instructed.
 
 3. **Performance & Asset Integrity:**
