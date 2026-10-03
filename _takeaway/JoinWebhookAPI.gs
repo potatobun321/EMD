@@ -1,32 +1,37 @@
 /**
  * ============================================================================
  * VISHWAM — THE GLOBAL DIALOGUE FORUM
- * Unified Join & Partnership Webhook Handler (Google Apps Script)
+ * Unified Webhook & Master Database Handler (Google Apps Script)
  * ============================================================================
  * 
- * Supports 3 Unified Tracks:
- * 1. Student / Scholar / Ambassador (VSH-STU-*)
- * 2. Academic Institution / University (VSH-INS-*)
- * 3. Organization / Think Tank / Partner (VSH-ORG-*)
- * 
- * Instructions:
- * 1. Open your Google Sheet -> Extensions -> Apps Script.
- * 2. Paste this file contents into a script file (e.g. JoinWebhookAPI.gs).
- * 3. Run 'setupJoinSpreadsheet()' once to initialize the formatted headers and tabs.
- * 4. Click 'Deploy' -> 'New Deployment' -> Select 'Web App'.
- *    - Execute as: 'Me'
- *    - Who has access: 'Anyone'
- * 5. Copy the Web App URL and paste it into 'web/js/join-form.js' -> 'webhookUrl'.
+ * Supports 4 Unified Streams:
+ * 1. Students & Scholars (VSH-STU-*)
+ * 2. Academic Institutions (VSH-INS-*)
+ * 3. Partner Organizations (VSH-ORG-*)
+ * 4. General Inquiries & Media (VSH-GEN-*)
  */
 
 const VISHWAM_CONFIG = {
   MASTER_SHEET_NAME: "All Submissions",
-  STUDENTS_SHEET_NAME: "Students & Youth",
+  STUDENTS_SHEET_NAME: "Students and Scholars",
   INSTITUTIONS_SHEET_NAME: "Academic Institutions",
-  ORGS_SHEET_NAME: "Organizations & Partners",
+  ORGS_SHEET_NAME: "Organizations and Partners",
+  GENERAL_SHEET_NAME: "General Inquiries",
   OFFICIAL_EMAIL: "vishwamspeaks@gmail.com",
   BRAND_NAME: "VISHWAM – The Global Dialogue Forum"
 };
+
+/**
+ * HTTP GET Handler (Status check & One-click initialization)
+ */
+function doGet(e) {
+  setupJoinSpreadsheet();
+  return ContentService.createTextOutput(JSON.stringify({
+    status: "active",
+    message: "VISHWAM Webhook is live and sheets are synchronized.",
+    timestamp: new Date().toISOString()
+  })).setMimeType(ContentService.MimeType.JSON);
+}
 
 /**
  * HTTP POST Handler for Webhook Submissions
@@ -51,9 +56,9 @@ function doPost(e) {
       masterSheet = ss.getSheetByName(VISHWAM_CONFIG.MASTER_SHEET_NAME);
     }
 
-    const timestamp = Utilities.formatDate(new Date(), "Asia/Kolkata", "yyyy-MM-dd HH:mm:ss");
+    const timestamp = Utilities.formatDate(new Date(), "Asia/Kolkata", "dd MMM yyyy, HH:mm:ss");
     const refCode = payload.refCode || ("VSH-" + Utilities.getUuid().substring(0, 8).toUpperCase());
-    const track = payload.track || "student";
+    const track = (payload.track || "student").toLowerCase();
     const applicantName = payload.applicantName || "";
     const applicantEmail = payload.applicantEmail || "";
     const applicantPhone = payload.applicantPhone || "";
@@ -69,7 +74,7 @@ function doPost(e) {
     const rowData = [
       timestamp,
       refCode,
-      track.toUpperCase(),
+      formatTrackLabel(track),
       applicantName,
       applicantEmail,
       applicantPhone,
@@ -90,6 +95,7 @@ function doPost(e) {
     let specificSheetName = VISHWAM_CONFIG.STUDENTS_SHEET_NAME;
     if (track === "institution") specificSheetName = VISHWAM_CONFIG.INSTITUTIONS_SHEET_NAME;
     else if (track === "organization") specificSheetName = VISHWAM_CONFIG.ORGS_SHEET_NAME;
+    else if (track === "general") specificSheetName = VISHWAM_CONFIG.GENERAL_SHEET_NAME;
 
     const specificSheet = ss.getSheetByName(specificSheetName);
     if (specificSheet) {
@@ -115,15 +121,19 @@ function doPost(e) {
   }
 }
 
+function formatTrackLabel(track) {
+  if (track === "institution") return "Academic Institution";
+  if (track === "organization") return "Partner Organization";
+  if (track === "general") return "General Inquiry";
+  return "Student and Scholar";
+}
+
 /**
  * Sends a clean, branded confirmation email to applicant
  */
 function sendConfirmationEmail(name, email, refCode, track, entityName) {
   try {
-    let trackLabel = "Student & Youth Leadership";
-    if (track === "institution") trackLabel = "Academic Institution Collaboration";
-    else if (track === "organization") trackLabel = "Partner Organization Synergy";
-
+    const trackLabel = formatTrackLabel(track);
     const subject = `[${refCode}] Registration Acknowledgment – VISHWAM Dialogue Platform`;
     const htmlBody = `
       <div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; padding: 24px; color: #0b192c;">
@@ -137,26 +147,22 @@ function sendConfirmationEmail(name, email, refCode, track, entityName) {
           <div style="padding: 28px 24px;">
             <h2 style="font-size: 18px; color: #0b192c; margin-top: 0;">Dear ${name},</h2>
             <p style="font-size: 15px; line-height: 1.7; color: #334155;">
-              Thank you for registering with <strong>VISHWAM – The Global Dialogue Forum</strong> under the <strong>${trackLabel}</strong> track.
+              Thank you for connecting with <strong>VISHWAM – The Global Dialogue Forum</strong> under the <strong>${trackLabel}</strong> track.
             </p>
 
             <div style="background: #f1f5f9; border-left: 4px solid #ea580c; border-radius: 6px; padding: 14px 18px; margin: 20px 0;">
               <div style="font-size: 12px; text-transform: uppercase; color: #64748b; font-weight: 700;">Registration Reference Code</div>
               <div style="font-size: 18px; font-weight: 800; color: #ea580c; letter-spacing: 0.05em; margin-top: 4px;">${refCode}</div>
-              <div style="font-size: 13px; color: #475569; margin-top: 4px;">Entity: ${entityName || 'Individual Application'}</div>
+              <div style="font-size: 13px; color: #475569; margin-top: 4px;">Affiliation: ${entityName || 'Individual Application'}</div>
             </div>
 
             <p style="font-size: 14px; line-height: 1.7; color: #475569;">
-              Our Secretariat and Review Desk are reviewing your profile and engagement objectives. A representative will connect with you shortly with further details and next steps.
-            </p>
-
-            <p style="font-size: 14px; line-height: 1.7; color: #475569;">
-              In the meantime, feel free to explore our policy initiatives, research papers, and event archives at <a href="https://vishwam.org" style="color: #ea580c; text-decoration: none; font-weight: 600;">vishwam.org</a>.
+              Our Secretariat and Review Desk are reviewing your submission. A representative will connect with you shortly with further details.
             </p>
 
             <div style="margin-top: 28px; padding-top: 18px; border-top: 1px solid #e2e8f0; font-size: 13px; color: #64748b;">
               Warm regards,<br>
-              <strong style="color: #0b192c;">Secretariat & Engagement Desk</strong><br>
+              <strong style="color: #0b192c;">Secretariat and Engagement Desk</strong><br>
               VISHWAM – The Global Dialogue Forum<br>
               <em>In Dialogue, We Discover Destiny.</em>
             </div>
@@ -177,7 +183,7 @@ function sendConfirmationEmail(name, email, refCode, track, entityName) {
 }
 
 /**
- * Setup and format all sheets with headers, color styles, and frozen panes
+ * Setup and format all sheets with elegant, clean headers without slashes
  */
 function setupJoinSpreadsheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -185,22 +191,23 @@ function setupJoinSpreadsheet() {
     VISHWAM_CONFIG.MASTER_SHEET_NAME,
     VISHWAM_CONFIG.STUDENTS_SHEET_NAME,
     VISHWAM_CONFIG.INSTITUTIONS_SHEET_NAME,
-    VISHWAM_CONFIG.ORGS_SHEET_NAME
+    VISHWAM_CONFIG.ORGS_SHEET_NAME,
+    VISHWAM_CONFIG.GENERAL_SHEET_NAME
   ];
 
   const headers = [
     "Timestamp",
     "Registration ID",
-    "Category / Track",
-    "Full Name / Contact Person",
+    "Category Track",
+    "Applicant Name",
     "Email Address",
-    "Phone / WhatsApp",
-    "City & State",
-    "Entity Name / College / Org",
-    "Designation / Academic Year",
-    "Area of Interest / Synergy",
-    "Website / Profile Link",
-    "Statement / Proposal Note",
+    "Contact Number",
+    "City and State",
+    "Affiliation Entity",
+    "Role or Academic Year",
+    "Engagement Track",
+    "Official Link",
+    "Executive Statement",
     "Status",
     "Reviewer Notes"
   ];
@@ -211,10 +218,8 @@ function setupJoinSpreadsheet() {
       sheet = ss.insertSheet(sheetName);
     }
     
-    // Set headers if empty or row 1 is blank
-    if (sheet.getLastRow() === 0 || sheet.getRange(1, 1).getValue() === "") {
-      sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    }
+    // Set headers
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
 
     // Format Header Row
     const headerRange = sheet.getRange(1, 1, 1, headers.length);
