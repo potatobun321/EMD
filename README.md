@@ -88,35 +88,81 @@ EMD/
 
 ## Setup and Usage
 
-### 1. Backend Setup (Google Workspace)
+### Prerequisites
+- A Google account (Google Workspace or personal Gmail).
+- Node.js (v18+) installed locally for development.
 
+---
+
+### Step 1: Create Google Drive Operations Folders
+1. Open [Google Drive](https://drive.google.com).
+2. Create a parent folder named `EMD_Operations`.
+3. Inside it, create 4 subfolders:
+   - `01_QR_Vault` (Stores generated QR images)
+   - `02_ID_Cards` (Stores uploaded pass graphics)
+   - `03_CSV_Import` (Target folder for registration CSV uploads)
+   - `04_CSV_Archive` (Storage for processed CSV files)
+4. Open each subfolder and copy its **Folder ID** from your browser URL bar:  
+   `https://drive.google.com/drive/folders/YOUR_FOLDER_ID_HERE`
+
+---
+
+### Step 2: Set Up Backend Database (Google Apps Script)
 1. Create a new Google Sheet named `EMD Master Database`.
-2. Open **Extensions > Apps Script**.
-3. Enable manifest file view (Project Settings > Show `appsscript.json`).
-4. Copy the files from `backend/src/` into the editor.
-5. Run `setupWorkbook()` once to build the relational sheet schema (`00_Configuration` to `05_Automation_Log`).
-6. Populate `00_Configuration` with Drive folder IDs and volunteer PIN credentials.
-7. Deploy as Web App:
-   - **Execute as**: `Me`
-   - **Access**: `Anyone`
-8. Note the deployed Web App URL (`https://script.google.com/macros/s/.../exec`).
+2. Go to **Extensions > Apps Script**.
+3. Rename the project to `EMD Backend Engine`.
+4. Enable manifest file view: Gear ⚙️ (**Project Settings**) > Check **"Show 'appsscript.json' manifest file in editor"**.
+5. Copy source files from `backend/src/`:
+   - Replace `appsscript.json` contents with `backend/src/appsscript.json`.
+   - Create 8 Script files (+ > Script) for each `.gs` file: `01_WebhookAPI`, `02_ScannerHandlers`, `03_AuthAndHelpers`, `04_SetupWorkbook`, `05_QRGenerator`, `07_CSVImporter`, `08_DashboardAPI`, and `EmailService`.
+   - Create 1 HTML file (+ > HTML) named `IDCardEmailTemplate` (do not include `.html` in the name) and paste `backend/src/IDCardEmailTemplate.html`.
+6. Initialize Workbook:
+   - In the toolbar dropdown, select `setupWorkbook` and click **Run**. Grant permissions when prompted.
+   - This creates 6 relational sheets (`00_Configuration` to `05_Automation_Log`).
+7. Populate `00_Configuration`:
+   - **Drive Folder IDs** (Column B, Rows 4–7): Paste your 4 Folder IDs.
+   - **Volunteer Credentials** (Columns J–Q): Configure Admin (`ADM-01`) and Volunteers (`VOL-01`, `VOL-02`) with names, PINs (e.g., `1234`), and assigned checkpoints (`ALL` or `ENT,BAD`).
+8. Deploy Web App:
+   - Click **Deploy > New deployment**.
+   - Select type: **Web app**.
+   - Set **Execute as**: `Me (your-email@domain.com)`.
+   - Set **Who has access**: `Anyone` (Required for volunteer phone scanner requests).
+   - Click **Deploy** and copy the **Web App URL** (`https://script.google.com/macros/s/.../exec`).
 
-### 2. Frontend Configuration (PWA Scanner)
+---
 
-1. Set the deployed Web App URL in `frontend/js/config.js`:
+### Step 3: Configure Frontend PWA Scanner
+1. Open `frontend/js/config.js` and set your Web App URL:
    ```javascript
    API_URL: "https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec",
    ```
-2. Serve the `frontend/` directory via GitHub Pages, Vercel, Netlify, or any static HTTP web server.
+2. Deploy the `frontend/` folder:
+   - **GitHub Pages**: Set source to `main` branch and `/frontend` directory (or use GitHub Actions).
+   - **Vercel / Netlify / Cloudflare Pages**: Set project root directory to `frontend`.
 
-### 3. Local Development
+---
+
+### Step 4: Local Development & CLI Tooling
 
 ```bash
-# Install dependencies
+# Clone repository
+git clone git@github.com:potatobun321/EMD.git
+cd EMD
+
+# Initialize local environment
 npm run setup
 
-# Serve frontend locally
+# Serve PWA scanner locally
 npm run dev
+```
+
+Optional CLI deployment for Google Apps Script:
+```bash
+# Copy clasp config template and edit scriptId
+cp backend/.clasp.json.template backend/.clasp.json
+
+# Push backend updates directly to Google Apps Script
+npm run push:backend
 ```
 
 ---
