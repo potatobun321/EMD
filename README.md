@@ -1,6 +1,6 @@
 <div align="center">
   <img src="EMD.png" alt="EMD Logo" width="140" />
-  <h1>EMD — Event Management Database</h1>
+  <h1>EMD </h1>
   <p><strong>Open-Source Low-to-Mid Level Event Operations Platform</strong></p>
 </div>
 
@@ -124,9 +124,6 @@ npm run dev
 ## Future Roadmap
 
 - **Self-Hosted Engine**: Port the Google Apps Script backend to a standalone self-hosted service (Node.js / Go with SQLite or PostgreSQL) for full infrastructure freedom, zero Google daily quota limits, and higher request throughput.
-- **Custom Webhook Integrations**: Native support for third-party ticketing platforms (Townscript, Eventbrite, Unstop) via inbound webhooks.
-- **Enhanced Local Cache**: Full offline participant database caching with client-side cryptographic signature verification for completely disconnected venues.
-- **Thermal Printer Support**: Bluetooth and WebUSB integration for instant physical badge printing upon check-in.
 
 ---
 
