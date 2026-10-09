@@ -94,5 +94,16 @@ const Api = (() => {
     });
   }
 
-  return { login, scan, bulkSync, getDashboardStats, getVolunteerDevices, unlockVolunteerDevice };
+  function flushCache() {
+    const session = Auth.getSession();
+    if (!session) return Promise.reject(new Error("No active session"));
+    return post({
+      action: "flushCache",
+      volunteerId: session.volunteerId,
+      pin: session.pin,
+      deviceId: session.deviceId || Auth.getDeviceId()
+    });
+  }
+
+  return { login, scan, bulkSync, getDashboardStats, getVolunteerDevices, unlockVolunteerDevice, flushCache };
 })();

@@ -1,0 +1,25 @@
+{
+  "name": "jai-conclave-emd",
+  "version": "1.7.0",
+  "description": "JAI Conclave 2026 Event Management Database & Scanner PWA",
+  "main": "frontend/index.html",
+  "scripts": {
+    "dev": "npx serve frontend -p 3000",
+    "push:backend": "cd backend && npx @google/clasp push",
+    "deploy:backend": "cd backend && npx @google/clasp deploy --description \"Production Deploy\"",
+    "setup": "bash scripts/setup.sh"
+  },
+  "keywords": [
+    "pwa",
+    "qr-scanner",
+    "google-apps-script",
+    "event-management",
+    "jai-conclave"
+  ],
+  "author": "VISHWAM Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@google/clasp": "^2.4.2",
+    "serve": "^14.2.4"
+  }
+}
